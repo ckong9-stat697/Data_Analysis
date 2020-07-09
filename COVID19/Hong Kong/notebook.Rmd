@@ -1,0 +1,82 @@
+---
+title: "Coronavirus in Hong Kong"
+output: html_notebook
+---
+
+This notebook analyze the effect of Novel Coronavirus (COVID-19) in Hong Kong from Feb 2020 to now. The data is extracted from Hong Kong Government's Website, https://chp-dashboard.geodata.gov.hk/covid-19/en.html, extracted daily.
+CSV file is obtained from https://data.gov.hk/en-data/dataset/hk-dh-chpsebcddr-novel-infectious-agent
+
+## Initial Setup
+```{r}
+library(rvest)
+library(XML)
+url <- "https://data.gov.hk/en-data/dataset/hk-dh-chpsebcddr-novel-infectious-agent/resource/12b0e451-9ee4-439f-9807-0ab684404fc6"
+source <- readLines(url, encoding = "UTF-8")
+parsed_doc <- htmlParse(source, encoding = "UTF-8")
+last_updated_date = as.Date(xpathSApply(parsed_doc, path = '/html/body/div[3]/div[2]/div[4]/span/span[2]', xmlValue), "%d/%m/%y")
+last_updated_date = format(last_updated_date, "%B %d %Y")
+```
+
+
+## Import Data to R
+Seeing the structure of the table.
+```{r}
+library(plyr)
+library(ggplot2)
+data=read.csv('http://www.chp.gov.hk/files/misc/enhanced_sur_covid_19_eng.csv')
+data$Report.date=as.Date(data$Report.date, "%d/%m/%y")
+data$Date.of.onset=as.Date(data$Date.of.onset, "%d/%m/%y")
+head(data)
+cat('Figure last updated on', last_updated_date)
+```
+
+## Basic Information - Demographics
+### Gender
+```{r}
+gender_stat = count(data, vars="Gender");gender_stat
+gender_plot1 = ggplot(gender_stat, aes(x="", y=freq, fill=Gender)) +
+  geom_bar(stat="identity", width=1) +
+  coord_polar("y", start=0);gender_plot1
+```
+
+### Age
+```{r}
+Age_stat = count(data, vars="Age");Age_stat
+Age_plot1 = ggplot(Age_stat, aes(x=Age, y=freq)) + geom_bar(stat="identity");Age_plot1
+```
+
+
+### Hospital admitted
+```{r}
+Hospital_stat = count(data, vars="Name.of.hospital.admitted");Hospital_stat
+Hospital_plot1 = ggplot(Hospital_stat, aes(x="", y=freq, fill=Name.of.hospital.admitted)) +
+  geom_bar(stat="identity", width=1) +
+  coord_polar("y", start=0);Hospital_plot1
+```
+
+### Resident Status
+```{r}
+Resident_stat = count(data, vars='HK.Non.HK.resident');Resident_stat
+Resident_plot1 = ggplot(Resident_stat, aes(x="", y=freq, fill=HK.Non.HK.resident)) +
+  geom_bar(stat="identity", width=1) +
+  coord_polar("y", start=0);Resident_plot1
+
+```
+
+### Case Classification
+```{r}
+Case_classification_stat = count(data, vars='Case.classification.');Case_classification_stat
+Case_classification_plot1 = ggplot(Case_classification_stat, aes(x="", y=freq, fill=Case.classification.)) +
+  geom_bar(stat="identity", width=1) +
+  coord_polar("y", start=0);Case_classification_plot1
+```
+
+## Cases Plot
+### Daily Report Cases
+```{r}
+daily_case_stat1 = count(data, vars="Report.date")
+daily_case_plot1 = ggplot(data=daily_case_stat1, aes(x=Report.date, y=freq, group=1)) +
+  geom_line()+
+  geom_point();daily_case_plot1
+```
+
